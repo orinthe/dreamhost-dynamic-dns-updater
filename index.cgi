@@ -22,10 +22,12 @@ def replace_record(name, ip):
       # and remove them
       if record == name and editable == '1':
         call('dns-remove_record', record=name, type=type, value=value)
+        call('dns-remove_record', record='*.{0}'.format(name), type=type, value=value)
   else:
     return False
   # add the new record
   status, response = call('dns-add_record', record=name, type='A', value=ip, comment='DDNS')
+  status, response = call('dns-add_record', record='*.{0}'.format(name), type='A', value=ip, comment='DDNS')
   return status == 'success'
 
 print 'Content-type: text/plain'
@@ -36,7 +38,11 @@ if fs.has_key('hostname') and fs.has_key('myip'):
   if fs['hostname'].value != os.environ['REMOTE_USER']:
     print 'nohost' # not a valid hostname / username combo
   else:
-    myip = fs['myip'].value
+    if fs['myip'].value == 'auto':
+        myip = os.environ["REMOTE_ADDR"]
+    else:
+        myip = fs['myip'].value
+
     if replace_record(fs['hostname'].value, myip):
       print 'good ' + myip # worked according to plan
     else:
